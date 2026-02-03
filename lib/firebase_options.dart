@@ -42,12 +42,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyA6lxFEi_FEWjzfxwmjddVvfJdPxwLJPZg',
-    appId: '1:1054706704905:web:67d193aaeaa275305fced8',
+    appId: '1:1054706704905:web:17b1fac935da903b5fced8',
     messagingSenderId: '1054706704905',
     projectId: 'lms-app-ae803',
     authDomain: 'lms-app-ae803.firebaseapp.com',
     storageBucket: 'lms-app-ae803.firebasestorage.app',
-    measurementId: 'G-XLWL2JX2ML',
+    measurementId: 'G-GMB9JZVGR5',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -89,4 +89,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'lms-app-ae803.firebasestorage.app',
     measurementId: 'G-GMB9JZVGR5',
   );
+
 }
