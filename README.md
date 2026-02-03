@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # lms_collage_admin
 
 A new Flutter project.
@@ -14,3 +15,6 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+=======
+# lms_collage_admin
+>>>>>>> ae31ec02294d5f58b3888c3b3e4dedcdcde81cea
