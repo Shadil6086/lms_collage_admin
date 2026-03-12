@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lms_collage_admin/strings/colors.dart';
 
+import 'contents/SemesterControlPage.dart';
 import 'contents/faculty_list.dart';
 import 'contents/students_list.dart';
 
@@ -64,6 +65,19 @@ class _CollegeHomePageState extends State<CollegeHomePage> {
                     MaterialPageRoute(builder: (context) => const FacultyListPage()),
                   );
                   debugPrint("Faculty tapped");
+                },
+              ),
+
+              const SizedBox(height: 30),
+
+              _buildOptionCard(
+                title: "Sem Control",
+                icon: Icons.menu_book_sharp,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SemesterControlPage()),
+                  );
                 },
               ),
             ],

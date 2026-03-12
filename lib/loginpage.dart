@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lms_collage_admin/strings/colors.dart';
 import 'homepage.dart';
 
@@ -16,6 +17,7 @@ class _CollegeLoginPageState extends State<CollegeLoginPage> {
 
   List<Map<String, dynamic>> _colleges = [];
   String? _selectedCollegeCode;
+
   bool _loading = true;
   bool _obscure = true;
 
@@ -25,51 +27,57 @@ class _CollegeLoginPageState extends State<CollegeLoginPage> {
     _fetchColleges();
   }
 
+  /// FETCH COLLEGES FROM FIRESTORE
   Future<void> _fetchColleges() async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('settings')
-          .doc('colleges') // Ensure this doc exists
+          .doc('colleges')
           .get();
 
       if (doc.exists && doc.data() != null) {
-        // Since your Firestore has keys "0", "1", etc., doc.data() is a Map.
-        // We convert the Map values into a List.
         final Map<String, dynamic> data = doc.data()!;
 
-        List<Map<String, dynamic>> tempList = [];
+        List<Map<String, dynamic>> temp = [];
 
-        // This iterates through keys "0", "1" and adds the inner maps to our list
         data.forEach((key, value) {
           if (value is Map) {
-            tempList.add(Map<String, dynamic>.from(value));
+            temp.add(Map<String, dynamic>.from(value));
           }
         });
 
         setState(() {
-          _colleges = tempList;
+          _colleges = temp;
           _loading = false;
         });
+      } else {
+        setState(() => _loading = false);
       }
     } catch (e) {
-      debugPrint("Firestore Error: $e");
+      debugPrint("Firestore error: $e");
       setState(() => _loading = false);
     }
   }
 
-  void _login() {
+  /// LOGIN FUNCTION
+  Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Find the college by its code
     final college = _colleges.firstWhere(
-      (c) => c['code'] == _selectedCollegeCode,
+          (c) => c['code'] == _selectedCollegeCode,
       orElse: () => {},
     );
 
     if (college.isNotEmpty && _passwordController.text == college['password']) {
+      /// SAVE LOGIN DATA
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      await prefs.setString("collegeCode", college['code']);
+      await prefs.setString("collegeName", college['name']);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Welcome ${college['name']}'),
+          content: Text("Welcome ${college['name']}"),
           backgroundColor: Colors.green,
         ),
       );
@@ -77,15 +85,16 @@ class _CollegeLoginPageState extends State<CollegeLoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => CollegeHomePage(collegeName: college['name']),
+          builder: (context) =>
+              CollegeHomePage(collegeName: college['name']),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Invalid password or selection',
-            style: TextStyle(color: AppColors.cardBackground),
+            "Invalid password or college",
+            style: TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.red,
         ),
@@ -100,133 +109,137 @@ class _CollegeLoginPageState extends State<CollegeLoginPage> {
       body: Center(
         child: Container(
           width: 360,
-          height: 360,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: AppColors.primaryBlue,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [BoxShadow(blurRadius: 10, color: Colors.black12)],
+            boxShadow: const [
+              BoxShadow(
+                blurRadius: 10,
+                color: Colors.black12,
+              )
+            ],
           ),
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'College Login',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.cardBackground,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      /// College Dropdown
-                      DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        value: _selectedCollegeCode,
-                        style: const TextStyle(
-                          color: Colors.white,
-                        ), // Text color inside dropdown
-                        dropdownColor: AppColors
-                            .primaryBlue, // Background of the popup menu
-                        decoration: InputDecoration(
-                          labelText: 'Select College',
-                          labelStyle: const TextStyle(
-                            color: AppColors.cardBackground,
-                          ),
-                          // Define the border colors here
-                          enabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.white,
-                              width: 1.0,
-                            ),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.white,
-                              width: 2.0,
-                            ),
-                          ),
-                          border: const OutlineInputBorder(),
-                        ),
-                        iconEnabledColor: Colors.white, // Dropdown arrow color
-                        items: _colleges.map((college) {
-                          return DropdownMenuItem<String>(
-                            value: college['code'].toString(),
-                            child: Text(
-                              college['name'] ?? 'Unknown',
-                              style: const TextStyle(
-                                color: Colors.white,
-                              ), // Items text color
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) =>
-                            setState(() => _selectedCollegeCode = value),
-                        validator: (value) =>
-                            value == null ? 'Select a college' : null,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      /// Password Field
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscure,
-                        style: const TextStyle(
-                          color: Colors.white,
-                        ), // Input text color
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          labelStyle: const TextStyle(
-                            color: AppColors.cardBackground,
-                          ),
-                          // Define the border colors here
-                          enabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.white,
-                              width: 1.0,
-                            ),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.white,
-                              width: 2.0,
-                            ),
-                          ),
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.white, // Visibility icon color
-                            ),
-                            onPressed: () =>
-                                setState(() => _obscure = !_obscure),
-                          ),
-                        ),
-                        validator: (value) =>
-                            value!.isEmpty ? 'Enter password' : null,
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: _login,
-                          child: const Text('Login'),
-                        ),
-                      ),
-                    ],
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "College Login",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.cardBackground,
                   ),
                 ),
+
+                const SizedBox(height: 24),
+
+                /// COLLEGE DROPDOWN
+                DropdownButtonFormField<String>(
+                  value: _selectedCollegeCode,
+                  isExpanded: true,
+                  dropdownColor: AppColors.primaryBlue,
+                  style: const TextStyle(color: Colors.white),
+
+                  decoration: const InputDecoration(
+                    labelText: "Select College",
+                    labelStyle:
+                    TextStyle(color: AppColors.cardBackground),
+
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+
+                    focusedBorder: OutlineInputBorder(
+                      borderSide:
+                      BorderSide(color: Colors.white, width: 2),
+                    ),
+                  ),
+
+                  iconEnabledColor: Colors.white,
+
+                  items: _colleges.map((college) {
+                    return DropdownMenuItem<String>(
+                      value: college['code'].toString(),
+                      child: Text(
+                        college['name'] ?? "Unknown",
+                        style: const TextStyle(color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCollegeCode = value;
+                    });
+                  },
+
+                  validator: (value) =>
+                  value == null ? "Select a college" : null,
+                ),
+
+                const SizedBox(height: 16),
+
+                /// PASSWORD FIELD
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscure,
+                  style: const TextStyle(color: Colors.white),
+
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    labelStyle: const TextStyle(
+                      color: AppColors.cardBackground,
+                    ),
+
+                    enabledBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+
+                    focusedBorder: const OutlineInputBorder(
+                      borderSide:
+                      BorderSide(color: Colors.white, width: 2),
+                    ),
+
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscure
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscure = !_obscure;
+                        });
+                      },
+                    ),
+                  ),
+
+                  validator: (value) =>
+                  value!.isEmpty ? "Enter password" : null,
+                ),
+
+                const SizedBox(height: 24),
+
+                /// LOGIN BUTTON
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _login,
+                    child: const Text("Login"),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
