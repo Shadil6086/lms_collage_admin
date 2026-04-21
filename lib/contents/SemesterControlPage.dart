@@ -40,104 +40,127 @@ class _SemesterControlPageState extends State<SemesterControlPage> {
   Widget build(BuildContext context) {
     if (collegeCode == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: Color(0xFFF8FAFC),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6))),
       );
     }
 
+    // Static semesters S1 to S8 for typical 4-year programs
+    final List<String> staticSemesters = List.generate(8, (index) => 'S${index + 1}');
+
     return Scaffold(
-      backgroundColor: AppColors.pageBackground,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlue,
         title: const Text(
           "Semester Control",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
         ),
-        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1.0),
+        ),
       ),
-
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection(collegeCode!)
-            .snapshots(),
-        builder: (context, snapshot) {
-
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          // 🔥 Filter only S1–S6
-          final semesters = snapshot.data!.docs
-              .where((doc) => allowedSemesters.contains(doc.id))
-              .toList();
-
-          return Padding(
-            padding: const EdgeInsets.all(16),
+      body: Column(
+        children: [
+          // Premium Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0F2557), Color(0xFF1A4FCE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Academic Roadmap', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text('Select a semester to initialize or manage connected departments.', style: TextStyle(color: Colors.white70, fontSize: 14)),
+              ],
+            ),
+          ),
+          
+          Expanded(
             child: GridView.builder(
-              itemCount: semesters.length,
-              gridDelegate:
-              const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 1.3,
+              padding: const EdgeInsets.all(24),
+              itemCount: staticSemesters.length,
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 220,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.4,
               ),
               itemBuilder: (context, index) {
-
-                final semId = semesters[index].id;
+                final semId = staticSemesters[index];
 
                 return InkWell(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SemesterDetailsPage(
-                          collegeCode: collegeCode!,
-                          semesterId: semId,
-                        ),
-                      ),
-                    );
+                     Navigator.push(
+                       context,
+                       MaterialPageRoute(
+                         builder: (_) => SemesterDetailsPage(
+                           collegeCode: collegeCode!,
+                           semesterId: semId,
+                         ),
+                       ),
+                     );
                   },
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [
+                         BoxShadow(color: Color(0x04000000), blurRadius: 8, offset: Offset(0, 4)),
+                      ],
                     ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primaryBlue,
-                            AppColors.primaryBlue.withOpacity(0.7),
-                          ],
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEFF6FF),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.auto_stories_outlined,
+                            color: Color(0xFF3B82F6),
+                            size: 28,
+                          ),
                         ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.auto_stories,
-                            color: Colors.white,
-                            size: 40,
+                        const SizedBox(height: 16),
+                        Text(
+                          semId,
+                          style: const TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            semId,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Manage Depts',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 12,
                           ),
-                        ],
-                      ),
+                        )
+                      ],
                     ),
                   ),
                 );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
